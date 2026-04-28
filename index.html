@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leaderboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue: #2196f3; --blue-light: #e8f4fd; --blue-mid: #bbdefb;
+    --gold: #f59e0b; --bg: #f0f4f8; --surface: #ffffff;
+    --border: #e2e8f0; --text: #1e293b; --muted: #64748b;
+  }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 32px; display: flex; align-items: center; gap: 24px; height: 52px; font-size: 13px; color: var(--muted); overflow-x: auto; }
+  nav span { white-space: nowrap; cursor: pointer; padding: 4px 0; }
+  nav span:hover { color: var(--blue); }
+  nav .sep { color: var(--border); }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 36px 20px 60px; }
+  h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 28px; }
+
+  .filters { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 32px; }
+  .select-wrap { position: relative; display: inline-flex; align-items: center; }
+  .select-wrap select { appearance: none; border: 1px solid #c8d0d8; border-radius: 0; padding: 7px 32px 7px 12px; font-size: 13px; font-family: inherit; color: var(--text); background: #e4e6e9; cursor: pointer; outline: none; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+  .select-wrap::after { content: '▾'; position: absolute; right: 10px; font-size: 11px; color: var(--muted); pointer-events: none; }
+  .search-wrap { position: relative; flex: 1; min-width: 160px; }
+  .search-wrap svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; color: var(--muted); }
+  .search-wrap input { width: 100%; border: 1px solid #c8d0d8; border-radius: 0; padding: 7px 14px 7px 36px; font-size: 13px; font-family: inherit; outline: none; background: #e4e6e9; }
+  .search-wrap input::placeholder { color: var(--muted); }
+  .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1; padding: 0 4px; }
+  .search-clear:hover { color: var(--text); }
+
+  /* PODIUM */
+  .podium-section { margin-bottom: 32px; }
+  .podium { display: flex; justify-content: center; align-items: flex-end; gap: 12px; }
+  .podium-col { display: flex; flex-direction: column; align-items: center; width: 200px; }
+  .podium-col.rank-1 { width: 220px; order: 2; }
+  .podium-col.rank-2 { order: 1; }
+  .podium-col.rank-3 { order: 3; }
+  .podium-info { display: flex; flex-direction: column; align-items: center; padding-bottom: 12px; }
+  .avatar-wrap { position: relative; display: inline-block; margin-bottom: 8px; }
+  .avatar-placeholder { width: 68px; height: 68px; border-radius: 50%; background: linear-gradient(135deg, #90caf9 0%, #42a5f5 100%); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: #fff; border: 3px solid #b0c4d8; }
+  .rank-1 .avatar-placeholder { width: 78px; height: 78px; font-size: 26px; border: 3px solid var(--gold); box-shadow: 0 0 0 3px #fde68a; }
+  .rank-badge-photo { position: absolute; bottom: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; border: 2px solid #fff; }
+  .rank-1 .rank-badge-photo { background: var(--gold); width: 28px; height: 28px; font-size: 14px; bottom: 0; right: 0; }
+  .rank-2 .rank-badge-photo { background: #78909c; }
+  .rank-3 .rank-badge-photo { background: #8d6748; }
+  .podium-name { font-size: 13px; font-weight: 600; text-align: center; margin-bottom: 1px; }
+  .podium-title { font-size: 11px; color: var(--muted); text-align: center; margin-bottom: 4px; }
+  .podium-score { display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 700; color: var(--blue); background: var(--surface); border: 1.5px solid var(--blue-mid); border-radius: 20px; padding: 3px 12px; }
+  .podium-step { width: 100%; border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: center; }
+  .podium-step-num { font-size: 52px; font-weight: 800; opacity: .25; line-height: 1; padding: 16px 0; }
+  .rank-1 .podium-step { background: linear-gradient(160deg, #fef3c7 0%, #fde68a 100%); height: 120px; }
+  .rank-1 .podium-step-num { color: #92400e; }
+  .rank-2 .podium-step { background: linear-gradient(160deg, #f1f5f9 0%, #cbd5e1 100%); height: 88px; }
+  .rank-2 .podium-step-num { color: #475569; }
+  .rank-3 .podium-step { background: linear-gradient(160deg, #f1f5f9 0%, #cbd5e1 100%); height: 72px; }
+  .rank-3 .podium-step-num { color: #475569; }
+
+  /* CARDS */
+  .participant-card { background: var(--surface); border-radius: 12px; margin-bottom: 10px; overflow: hidden; border: 1px solid var(--border); }
+  .participant-card.expanded { border-color: var(--blue); }
+  .card-main { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
+  .card-left { display: flex; align-items: center; gap: 12px; }
+  .card-right { display: flex; align-items: center; gap: 16px; }
+  .card-rank { font-size: 20px; font-weight: 700; color: #b0bac5; min-width: 32px; text-align: center; flex-shrink: 0; }
+  .mini-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--blue) 0%, #42a5f5 100%); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+  .participant-name { font-weight: 600; font-size: 14px; }
+  .participant-title { font-size: 12px; color: var(--muted); }
+  .card-icons { display: flex; align-items: center; gap: 16px; }
+  .card-icon-item { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--blue); font-size: 12px; font-weight: 600; min-width: 28px; }
+  .card-divider { width: 1px; height: 36px; background: var(--border); }
+  .card-total { display: flex; flex-direction: column; align-items: flex-start; min-width: 80px; }
+  .card-total-label { font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+  .card-total-score { display: flex; align-items: center; gap: 5px; font-size: 22px; font-weight: 700; color: var(--blue); }
+  .expand-btn { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--muted); transition: background .15s; outline: none; }
+  .expand-btn:hover { background: var(--blue-light); color: var(--blue); }
+
+  /* ACTIVITY */
+  .recent-activity-wrap { border-top: 1px solid var(--border); background: var(--surface); }
+  .recent-activity-header { padding: 10px 24px 6px; font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  .activity-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  .activity-table thead tr { background: var(--bg); border-bottom: 1px solid var(--border); }
+  .activity-table thead th { padding: 10px 24px; text-align: left; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; white-space: nowrap; }
+  .activity-table thead th:nth-child(1) { width: auto; }
+  .activity-table thead th:nth-child(2) { width: 160px; }
+  .activity-table thead th:nth-child(3) { width: 130px; }
+  .activity-table thead th:nth-child(4) { width: 80px; text-align: right; }
+  .activity-row { border-bottom: 1px solid var(--border); }
+  .activity-row:last-child { border-bottom: none; }
+  .activity-table td { padding: 14px 24px; vertical-align: middle; }
+  .act-name { color: var(--text); font-size: 13px; }
+  .act-cat-pill { background: #e9ecef; color: #495057; border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 400; white-space: nowrap; border: 1px solid #dee2e6; }
+  .act-date { color: var(--muted); font-size: 13px; white-space: nowrap; text-align: left; }
+  .act-points { text-align: right; font-weight: 700; font-size: 13px; color: var(--blue); white-space: nowrap; }
+  .no-results { text-align: center; padding: 48px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <span>News & Events ▾</span><span class="sep">|</span>
+  <span>Personal Growth ▾</span><span class="sep">|</span>
+  <span>Benefits</span><span class="sep">|</span>
+  <span>Policies</span><span class="sep">|</span>
+  <span>Instructions</span>
+</nav>
+
+<div class="container">
+  <h1>Leaderboard</h1>
+  <p class="subtitle">Top performers based on contributions and activity</p>
+
+  <div class="filters">
+    <div class="select-wrap">
+      <select id="filterYear">
+        <option value="all">All Years</option>
+        <option value="2025">2025</option>
+      </select>
+    </div>
+    <div class="select-wrap">
+      <select id="filterQuarter">
+        <option value="all">All Quarters</option>
+        <option value="Q1">Q1</option>
+        <option value="Q2">Q2</option>
+        <option value="Q3">Q3</option>
+        <option value="Q4">Q4</option>
+      </select>
+    </div>
+    <div class="select-wrap" id="categoryWrap">
+      <select id="filterCategory">
+        <option value="all">All Categories</option>
+        <option value="Education">Education</option>
+        <option value="Public Speaking">Public Speaking</option>
+        <option value="University Partners">University Partners...</option>
+      </select>
+    </div>
+    <div class="search-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Search employee...">
+      <button class="search-clear" id="searchClear" style="display:none">×</button>
+    </div>
+  </div>
+
+  <div class="podium-section" id="podiumSection">
+    <div class="podium" id="podium"></div>
+  </div>
+
+  <div id="cardsList"></div>
+  <div class="no-results" id="noResults" style="display:none">No employees found.</div>
+</div>
+
+<script>
+const EMPLOYEES = [
+  // Q1 2025
+  { id:1,  name:"Alice Mercer",    title:"Senior Trainer",       grade:"BY. G3. T1", dept:"Learning & Development", category:"Education",           score:536, monitor:2,  edu:6,  social:0, year:2025, quarter:"Q1" },
+  { id:3,  name:"Clara Novak",     title:"Program Manager",      grade:"PL. G2. T1", dept:"Strategy",               category:"Education",           score:320, monitor:1,  edu:5,  social:0, year:2025, quarter:"Q1" },
+  { id:7,  name:"Grace Adeyemi",   title:"HR Business Partner",  grade:"BY. G2. T1", dept:"People & Culture",       category:"Education",           score:260, monitor:1,  edu:4,  social:0, year:2025, quarter:"Q1" },
+  { id:11, name:"Kira Petrov",     title:"Cloud Engineer",       grade:"BY. G1. T1", dept:"Engineering",            category:"Education",           score:204, monitor:0,  edu:3,  social:0, year:2025, quarter:"Q1" },
+  { id:16, name:"Sam Oduya",       title:"DevOps Engineer",      grade:"BY. G1. T2", dept:"Engineering",            category:"Public Speaking",     score:180, monitor:3,  edu:0,  social:0, year:2025, quarter:"Q1" },
+  { id:17, name:"Nina Petersen",   title:"Scrum Master",         grade:"DK. G2. T1", dept:"Delivery",               category:"University Partners", score:160, monitor:0,  edu:0,  social:4, year:2025, quarter:"Q1" },
+  { id:18, name:"Omar Farouk",     title:"Backend Engineer",     grade:"EG. G1. T3", dept:"Engineering",            category:"Public Speaking",     score:140, monitor:2,  edu:1,  social:0, year:2025, quarter:"Q1" },
+  { id:19, name:"Lena Braun",      title:"Data Analyst",         grade:"DE. G1. T2", dept:"Analytics",              category:"University Partners", score:120, monitor:0,  edu:0,  social:3, year:2025, quarter:"Q1" },
+
+  // Q2 2025
+  { id:2,  name:"Bruno Castillo",  title:"Tech Lead",            grade:"BY. G1. T2", dept:"Engineering",            category:"Public Speaking",     score:328, monitor:7,  edu:0,  social:0, year:2025, quarter:"Q2" },
+  { id:5,  name:"Elena Voss",      title:"Data Scientist",       grade:"BY. G2. T3", dept:"Analytics",              category:"Education",           score:298, monitor:0,  edu:5,  social:0, year:2025, quarter:"Q2" },
+  { id:8,  name:"Hugo Martinez",   title:"Product Designer",     grade:"ES. G1. T1", dept:"Design",                 category:"Public Speaking",     score:244, monitor:4,  edu:0,  social:0, year:2025, quarter:"Q2" },
+  { id:12, name:"Leo Nakamura",    title:"Marketing Manager",    grade:"JP. G2. T1", dept:"Marketing",              category:"Public Speaking",     score:190, monitor:2,  edu:0,  social:0, year:2025, quarter:"Q2" },
+  { id:20, name:"Petra Horak",     title:"QA Engineer",          grade:"CZ. G1. T1", dept:"Engineering",            category:"Education",           score:170, monitor:0,  edu:3,  social:0, year:2025, quarter:"Q2" },
+  { id:21, name:"Carlos Reyes",    title:"Product Owner",        grade:"MX. G2. T2", dept:"Delivery",               category:"University Partners", score:150, monitor:0,  edu:0,  social:3, year:2025, quarter:"Q2" },
+  { id:22, name:"Yuki Tanaka",     title:"ML Engineer",          grade:"JP. G1. T3", dept:"Analytics",              category:"Education",           score:130, monitor:0,  edu:2,  social:0, year:2025, quarter:"Q2" },
+  { id:23, name:"Fatima Al-Said",  title:"UX Designer",          grade:"AE. G1. T1", dept:"Design",                 category:"University Partners", score:110, monitor:0,  edu:0,  social:2, year:2025, quarter:"Q2" },
+
+  // Q3 2025
+  { id:4,  name:"Daniel Osei",     title:"Partnership Manager",  grade:"DE. G2. T2", dept:"University Partners",    category:"University Partners", score:320, monitor:2,  edu:0,  social:4, year:2025, quarter:"Q3" },
+  { id:9,  name:"Iris Kowalski",   title:"Research Analyst",     grade:"PL. G1. T3", dept:"Analytics",              category:"University Partners", score:231, monitor:1,  edu:0,  social:2, year:2025, quarter:"Q3" },
+  { id:13, name:"Mia Fontaine",    title:"Content Strategist",   grade:"FR. G1. T2", dept:"Marketing",              category:"Public Speaking",     score:175, monitor:2,  edu:0,  social:0, year:2025, quarter:"Q3" },
+  { id:24, name:"Erik Sorensen",   title:"Frontend Engineer",    grade:"DK. G1. T2", dept:"Engineering",            category:"Public Speaking",     score:290, monitor:5,  edu:0,  social:0, year:2025, quarter:"Q3" },
+  { id:25, name:"Amara Diallo",    title:"People Partner",       grade:"SN. G2. T1", dept:"People & Culture",       category:"Education",           score:240, monitor:0,  edu:4,  social:0, year:2025, quarter:"Q3" },
+  { id:26, name:"Viktor Koval",    title:"Security Analyst",     grade:"UA. G1. T3", dept:"Engineering",            category:"Education",           score:200, monitor:0,  edu:3,  social:0, year:2025, quarter:"Q3" },
+  { id:27, name:"Sophie Lambert",  title:"Agile Coach",          grade:"FR. G2. T2", dept:"Delivery",               category:"University Partners", score:165, monitor:0,  edu:0,  social:3, year:2025, quarter:"Q3" },
+  { id:28, name:"Raj Patel",       title:"Cloud Architect",      grade:"IN. G2. T3", dept:"Engineering",            category:"Public Speaking",     score:135, monitor:2,  edu:0,  social:0, year:2025, quarter:"Q3" },
+
+  // Q4 2025
+  { id:6,  name:"Felix Huang",     title:"Solutions Architect",  grade:"US. G1. T2", dept:"Engineering",            category:"Public Speaking",     score:275, monitor:4,  edu:1,  social:0, year:2025, quarter:"Q4" },
+  { id:10, name:"Jake Thornton",   title:"Agile Coach",          grade:"GB. G2. T2", dept:"Delivery",               category:"Education",           score:218, monitor:0,  edu:3,  social:0, year:2025, quarter:"Q4" },
+  { id:14, name:"Noel Okonkwo",    title:"Security Engineer",    grade:"BY. G2. T3", dept:"Engineering",            category:"Education",           score:162, monitor:0,  edu:2,  social:0, year:2025, quarter:"Q4" },
+  { id:15, name:"Olivia Grant",    title:"UX Researcher",        grade:"GB. G1. T2", dept:"Design",                 category:"University Partners", score:155, monitor:0,  edu:0,  social:2, year:2025, quarter:"Q4" },
+  { id:29, name:"Marcus Webb",     title:"Tech Lead",            grade:"GB. G1. T1", dept:"Engineering",            category:"Public Speaking",     score:310, monitor:6,  edu:0,  social:0, year:2025, quarter:"Q4" },
+  { id:30, name:"Hana Novotna",    title:"Data Engineer",        grade:"CZ. G1. T2", dept:"Analytics",              category:"Education",           score:255, monitor:0,  edu:4,  social:0, year:2025, quarter:"Q4" },
+  { id:31, name:"Kwame Asante",    title:"Partnership Lead",     grade:"GH. G2. T2", dept:"University Partners",    category:"University Partners", score:210, monitor:0,  edu:0,  social:4, year:2025, quarter:"Q4" },
+  { id:32, name:"Ines Carvalho",   title:"Product Manager",      grade:"PT. G2. T1", dept:"Delivery",               category:"Public Speaking",     score:180, monitor:3,  edu:0,  social:0, year:2025, quarter:"Q4" },
+];
+
+const ACTIVITIES = {
+  1: [
+    { name:"[EDU] Intro to Machine Learning Workshop", category:"Education", date:"15-Jan-2025", points:64 },
+    { name:"[EDU] Python for Data Science Bootcamp", category:"Education", date:"22-Jan-2025", points:64 },
+    { name:"[EDU] Cloud Fundamentals Session #3", category:"Education", date:"05-Feb-2025", points:64 },
+    { name:"[EDU] AI Ethics Roundtable 12.02.2025", category:"Public Speaking", date:"12-Feb-2025", points:64 },
+    { name:"[EDU] DevOps Essentials Workshop", category:"Education", date:"01-Mar-2025", points:64 },
+    { name:"[EDU] Tech Trends Digest #7 18.03.2025", category:"Public Speaking", date:"18-Mar-2025", points:64 },
+    { name:"[EDU] Building Scalable APIs 25.03.2025", category:"Education", date:"25-Mar-2025", points:64 },
+    { name:"[EDU] Agile Fundamentals Refresher", category:"Education", date:"10-Apr-2025", points:88 },
+  ],
+  2: [
+    { name:"[EDU] Github Copilot Workshop (18.12.25)", category:"Public Speaking", date:"17-Dec-2025", points:32 },
+    { name:"[EDU] PowerPoint Karaoke #3: New Year playlist", category:"Public Speaking", date:"16-Dec-2025", points:64 },
+    { name:"[EDU] AI Digest #15 16.12.2025", category:"Public Speaking", date:"15-Dec-2025", points:32 },
+    { name:"[EDU] AI Digest #13 18.11.2025", category:"Public Speaking", date:"18-Nov-2025", points:64 },
+    { name:"[EDU] Building a Web for Humans and Machines", category:"Public Speaking", date:"12-Nov-2025", points:32 },
+    { name:"[EDU] AI Digest #11 21.10.25", category:"Public Speaking", date:"26-Oct-2025", points:64 },
+    { name:"[EDU] AI Digest #10 – First Global Edition", category:"Public Speaking", date:"06-Oct-2025", points:40 },
+  ],
+  3: [
+    { name:"[EDU] Leadership in Learning Seminar", category:"Education", date:"10-Jan-2025", points:64 },
+    { name:"[EDU] Curriculum Design Masterclass", category:"Education", date:"24-Jan-2025", points:64 },
+    { name:"[EDU] Onboarding Program Update Q1", category:"Education", date:"07-Feb-2025", points:32 },
+    { name:"[EDU] Mentorship Program Kickoff", category:"Public Speaking", date:"20-Feb-2025", points:64 },
+    { name:"[EDU] Skills Matrix Workshop 05.03.2025", category:"Education", date:"05-Mar-2025", points:32 },
+    { name:"[EDU] Learning Path Design Sprint", category:"Education", date:"19-Mar-2025", points:64 },
+  ],
+  4: [
+    { name:"[EDU] University Connect Summit 2025", category:"University Partners", date:"08-Jan-2025", points:64 },
+    { name:"[EDU] Campus Talks: Future of Work", category:"Public Speaking", date:"22-Jan-2025", points:64 },
+    { name:"[EDU] Student Hackathon Orientation", category:"University Partners", date:"05-Feb-2025", points:32 },
+    { name:"[EDU] Research Collaboration Workshop", category:"University Partners", date:"19-Feb-2025", points:64 },
+    { name:"[EDU] Career Fair Presentation 04.03.2025", category:"Public Speaking", date:"04-Mar-2025", points:32 },
+    { name:"[EDU] Industry-Academia Forum", category:"University Partners", date:"18-Mar-2025", points:64 },
+  ],
+  5: [
+    { name:"[EDU] SQL for Analysts: Advanced Techniques", category:"Education", date:"13-Jan-2025", points:64 },
+    { name:"[EDU] Data Viz Best Practices Workshop", category:"Education", date:"27-Jan-2025", points:64 },
+    { name:"[EDU] Tableau Fundamentals Session", category:"Education", date:"10-Feb-2025", points:64 },
+    { name:"[EDU] Statistics Refresher #4", category:"Education", date:"24-Feb-2025", points:64 },
+    { name:"[EDU] BI Tools Comparison Seminar", category:"Education", date:"10-Mar-2025", points:42 },
+  ],
+  6: [
+    { name:"[EDU] Cloud Architecture Deep Dive", category:"Public Speaking", date:"09-Jan-2025", points:64 },
+    { name:"[EDU] Kubernetes Fundamentals Workshop", category:"Public Speaking", date:"23-Jan-2025", points:64 },
+    { name:"[EDU] Microservices Patterns Talk", category:"Public Speaking", date:"06-Feb-2025", points:64 },
+    { name:"[EDU] System Design Interview Prep", category:"Education", date:"20-Feb-2025", points:32 },
+    { name:"[EDU] API Gateway Best Practices", category:"Public Speaking", date:"06-Mar-2025", points:51 },
+  ],
+  7: [
+    { name:"[EDU] Inclusive Hiring Workshop", category:"Education", date:"11-Jan-2025", points:64 },
+    { name:"[EDU] Performance Review Calibration", category:"Education", date:"25-Jan-2025", points:64 },
+    { name:"[EDU] Employee Wellbeing Seminar", category:"Education", date:"08-Feb-2025", points:32 },
+    { name:"[EDU] Culture & Values Workshop", category:"Public Speaking", date:"22-Feb-2025", points:64 },
+    { name:"[EDU] Team Building Facilitation", category:"Education", date:"08-Mar-2025", points:36 },
+  ],
+  8: [
+    { name:"[EDU] Design Thinking Workshop", category:"Public Speaking", date:"14-Jan-2025", points:64 },
+    { name:"[EDU] Figma Advanced Techniques", category:"Public Speaking", date:"28-Jan-2025", points:64 },
+    { name:"[EDU] UX Research Methods Talk", category:"Public Speaking", date:"11-Feb-2025", points:64 },
+    { name:"[EDU] Accessibility in Design Session", category:"Public Speaking", date:"25-Feb-2025", points:52 },
+  ],
+  9: [
+    { name:"[EDU] University Research Symposium", category:"University Partners", date:"15-Jan-2025", points:64 },
+    { name:"[EDU] Data Science Collaboration Summit", category:"University Partners", date:"29-Jan-2025", points:64 },
+    { name:"[EDU] Thesis Defense Panel", category:"Public Speaking", date:"12-Feb-2025", points:103 },
+  ],
+  10: [
+    { name:"[EDU] Scrum Master Certification Prep", category:"Education", date:"16-Jan-2025", points:64 },
+    { name:"[EDU] Kanban in Practice Workshop", category:"Education", date:"30-Jan-2025", points:64 },
+    { name:"[EDU] Retrospective Facilitation Guide", category:"Education", date:"13-Feb-2025", points:90 },
+  ],
+  11: [
+    { name:"[EDU] AWS Solutions Architect Workshop", category:"Education", date:"17-Jan-2025", points:64 },
+    { name:"[EDU] Terraform Basics Session", category:"Education", date:"31-Jan-2025", points:64 },
+    { name:"[EDU] CI/CD Pipeline Masterclass", category:"Education", date:"14-Feb-2025", points:76 },
+  ],
+  12: [
+    { name:"[EDU] Brand Storytelling Workshop", category:"Public Speaking", date:"18-Jan-2025", points:64 },
+    { name:"[EDU] Content Marketing Summit", category:"Public Speaking", date:"01-Feb-2025", points:126 },
+  ],
+  13: [
+    { name:"[EDU] SEO & Content Strategy Talk", category:"Public Speaking", date:"19-Jan-2025", points:64 },
+    { name:"[EDU] Copywriting for Tech Audiences", category:"Public Speaking", date:"02-Feb-2025", points:111 },
+  ],
+  14: [
+    { name:"[EDU] Zero Trust Security Workshop", category:"Education", date:"20-Jan-2025", points:64 },
+    { name:"[EDU] Threat Modelling Fundamentals", category:"Education", date:"03-Feb-2025", points:98 },
+  ],
+  15: [
+    { name:"[EDU] User Research Methods", category:"University Partners", date:"21-Jan-2025", points:64 },
+    { name:"[EDU] Usability Testing Workshop", category:"University Partners", date:"04-Feb-2025", points:91 },
+  ],
+
+  // Q1 new
+  16: [
+    { name:"[EDU] DevOps Talk: CI/CD Best Practices", category:"Public Speaking", date:"10-Jan-2025", points:64 },
+    { name:"[EDU] Infrastructure as Code Workshop",   category:"Public Speaking", date:"25-Jan-2025", points:64 },
+    { name:"[EDU] SRE Fundamentals Talk",             category:"Public Speaking", date:"14-Feb-2025", points:52 },
+  ],
+  17: [
+    { name:"[EDU] University Tech Partnership Forum", category:"University Partners", date:"08-Jan-2025", points:48 },
+    { name:"[EDU] Campus Career Day Presentation",    category:"University Partners", date:"22-Jan-2025", points:48 },
+    { name:"[EDU] Student Mentorship Program Intro",  category:"University Partners", date:"05-Feb-2025", points:32 },
+    { name:"[EDU] Research Grant Review Session",     category:"University Partners", date:"20-Feb-2025", points:32 },
+  ],
+  18: [
+    { name:"[EDU] Backend Architecture Talk",         category:"Public Speaking", date:"12-Jan-2025", points:64 },
+    { name:"[EDU] API Design Patterns Workshop",      category:"Public Speaking", date:"26-Jan-2025", points:48 },
+    { name:"[EDU] Python Advanced Session",           category:"Education",       date:"09-Feb-2025", points:28 },
+  ],
+  19: [
+    { name:"[EDU] University Data Lab Kickoff",       category:"University Partners", date:"15-Jan-2025", points:48 },
+    { name:"[EDU] Student Analytics Workshop",        category:"University Partners", date:"29-Jan-2025", points:40 },
+    { name:"[EDU] Research Methods Seminar",          category:"University Partners", date:"12-Feb-2025", points:32 },
+  ],
+  // Q2 new
+  20: [
+    { name:"[EDU] QA Automation Fundamentals",        category:"Education", date:"14-Apr-2025", points:64 },
+    { name:"[EDU] Testing Best Practices Workshop",   category:"Education", date:"28-Apr-2025", points:64 },
+    { name:"[EDU] Performance Testing Session",       category:"Education", date:"12-May-2025", points:42 },
+  ],
+  21: [
+    { name:"[EDU] Uni Connect Hackathon 2025",        category:"University Partners", date:"16-Apr-2025", points:56 },
+    { name:"[EDU] Student Product Workshop",          category:"University Partners", date:"30-Apr-2025", points:56 },
+    { name:"[EDU] Campus Innovation Forum",           category:"University Partners", date:"14-May-2025", points:38 },
+  ],
+  22: [
+    { name:"[EDU] ML Fundamentals for Engineers",     category:"Education", date:"18-Apr-2025", points:64 },
+    { name:"[EDU] Neural Networks Workshop",          category:"Education", date:"02-May-2025", points:66 },
+  ],
+  23: [
+    { name:"[EDU] UX & University Research Collab",   category:"University Partners", date:"20-Apr-2025", points:56 },
+    { name:"[EDU] Design Thinking for Students",      category:"University Partners", date:"04-May-2025", points:54 },
+  ],
+  // Q3 new
+  24: [
+    { name:"[EDU] React Advanced Patterns Talk",      category:"Public Speaking", date:"10-Jul-2025", points:64 },
+    { name:"[EDU] Frontend Performance Workshop",     category:"Public Speaking", date:"24-Jul-2025", points:64 },
+    { name:"[EDU] Web Accessibility Talk",            category:"Public Speaking", date:"07-Aug-2025", points:64 },
+    { name:"[EDU] TypeScript Deep Dive",              category:"Public Speaking", date:"21-Aug-2025", points:64 },
+    { name:"[EDU] CSS Architecture Workshop",         category:"Public Speaking", date:"04-Sep-2025", points:34 },
+  ],
+  25: [
+    { name:"[EDU] People Analytics Workshop",         category:"Education", date:"12-Jul-2025", points:64 },
+    { name:"[EDU] Talent Development Session",        category:"Education", date:"26-Jul-2025", points:64 },
+    { name:"[EDU] HR Tech Tools Training",            category:"Education", date:"09-Aug-2025", points:64 },
+    { name:"[EDU] Onboarding Revamp Workshop",        category:"Education", date:"23-Aug-2025", points:48 },
+  ],
+  26: [
+    { name:"[EDU] Zero Trust Architecture Talk",      category:"Education", date:"14-Jul-2025", points:64 },
+    { name:"[EDU] SIEM Tools Workshop",               category:"Education", date:"28-Jul-2025", points:64 },
+    { name:"[EDU] Threat Intelligence Session",       category:"Education", date:"11-Aug-2025", points:72 },
+  ],
+  27: [
+    { name:"[EDU] University Agile Bootcamp",         category:"University Partners", date:"16-Jul-2025", points:56 },
+    { name:"[EDU] Student Scrum Workshop",            category:"University Partners", date:"30-Jul-2025", points:56 },
+    { name:"[EDU] Campus Sprint Planning Session",    category:"University Partners", date:"13-Aug-2025", points:53 },
+  ],
+  28: [
+    { name:"[EDU] Multi-Cloud Strategy Talk",         category:"Public Speaking", date:"18-Jul-2025", points:72 },
+    { name:"[EDU] Serverless Architecture Workshop",  category:"Public Speaking", date:"01-Aug-2025", points:63 },
+  ],
+  // Q4 new
+  29: [
+    { name:"[EDU] Engineering Leadership Talk",       category:"Public Speaking", date:"10-Oct-2025", points:64 },
+    { name:"[EDU] System Design Workshop",            category:"Public Speaking", date:"24-Oct-2025", points:56 },
+    { name:"[EDU] Tech Roadmap Planning Talk",        category:"Public Speaking", date:"07-Nov-2025", points:56 },
+    { name:"[EDU] Code Review Best Practices",        category:"Public Speaking", date:"21-Nov-2025", points:56 },
+    { name:"[EDU] Architecture Decision Records",     category:"Public Speaking", date:"05-Dec-2025", points:56 },
+    { name:"[EDU] Platform Engineering Talk",         category:"Public Speaking", date:"19-Dec-2025", points:22 },
+  ],
+  30: [
+    { name:"[EDU] Data Pipeline Workshop",            category:"Education", date:"12-Oct-2025", points:64 },
+    { name:"[EDU] Spark Fundamentals Session",        category:"Education", date:"26-Oct-2025", points:64 },
+    { name:"[EDU] dbt Advanced Workshop",             category:"Education", date:"09-Nov-2025", points:64 },
+    { name:"[EDU] Data Quality Best Practices",       category:"Education", date:"23-Nov-2025", points:63 },
+  ],
+  31: [
+    { name:"[EDU] University Partnership Summit Q4",  category:"University Partners", date:"14-Oct-2025", points:56 },
+    { name:"[EDU] Student Internship Program",        category:"University Partners", date:"28-Oct-2025", points:56 },
+    { name:"[EDU] Research Collaboration Day",        category:"University Partners", date:"11-Nov-2025", points:56 },
+    { name:"[EDU] Campus Tech Fair 2025",             category:"University Partners", date:"25-Nov-2025", points:42 },
+  ],
+  32: [
+    { name:"[EDU] Product Discovery Workshop",        category:"Public Speaking", date:"16-Oct-2025", points:64 },
+    { name:"[EDU] Roadmap Prioritization Talk",       category:"Public Speaking", date:"30-Oct-2025", points:64 },
+    { name:"[EDU] Stakeholder Management Session",    category:"Public Speaking", date:"13-Nov-2025", points:52 },
+  ],
+};
+
+let expandedId = null;
+
+function ini(name) { return name.split(" ").map(p => p[0]).join("").toUpperCase(); }
+
+function starSVG(s) { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="${s}" height="${s}"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`; }
+function monitorSVG(s) { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="${s}" height="${s}"><rect x="2" y="3" width="20" height="13" rx="1"/><line x1="5" y1="8" x2="19" y2="8"/><line x1="12" y1="16" x2="12" y2="19"/><line x1="7" y1="21" x2="17" y2="21"/></svg>`; }
+function eduSVG(s) { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="${s}" height="${s}"><polygon points="12 2 22 8 12 14 2 8 12 2"/><path d="M6 11v5c0 0 2 3 6 3s6-3 6-3v-5"/><line x1="22" y1="8" x2="22" y2="14"/></svg>`; }
+function smileySVG(s) { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="${s}" height="${s}"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1" fill="currentColor"/><circle cx="15" cy="9" r="1" fill="currentColor"/></svg>`; }
+function chevSVG(open) { return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="${open?'M18 15l-6-6-6 6':'M6 9l6 6 6-6'}"/></svg>`; }
+
+function getFilteredBase(includeSearch) {
+  const year = document.getElementById("filterYear").value;
+  const qtr  = document.getElementById("filterQuarter").value;
+  const cat  = document.getElementById("filterCategory").value;
+  const q    = document.getElementById("searchInput").value.trim().toLowerCase();
+  return EMPLOYEES.filter(e => {
+    if (year !== "all" && String(e.year) !== year) return false;
+    if (qtr  !== "all" && e.quarter !== qtr) return false;
+    if (cat  !== "all") {
+      const acts = ACTIVITIES[e.id] || [];
+      const hascat = acts.some(a => a.category === cat);
+      if (!hascat) return false;
+    }
+    if (includeSearch && q && !e.name.toLowerCase().includes(q) && !e.dept.toLowerCase().includes(q)) return false;
+    return true;
+  }).map(e => {
+    const acts = ACTIVITIES[e.id] || [];
+    const filtered = cat === "all" ? acts : acts.filter(a => a.category === cat);
+    const effectiveScore = cat === "all" ? e.score : filtered.reduce((s,a) => s + a.points, 0);
+    return { ...e, effectiveScore };
+  }).sort((a,b) => b.effectiveScore - a.effectiveScore);
+}
+
+function getFiltered() {
+  return getFilteredBase(true);
+}
+
+function renderPodium(data) {
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const podium = document.getElementById("podium");
+  const section = document.getElementById("podiumSection");
+  podium.innerHTML = "";
+
+  // Get full list without search to determine real top3
+  const fullList = getFilteredBase(false);
+  const top3 = fullList.slice(0, 3);
+
+  if (!top3.length) { section.style.display="none"; return; }
+
+  // If search active - only show the found employee's podium place
+  if (q) {
+    const foundIdx = top3.findIndex(e =>
+      e.name.toLowerCase().includes(q) || e.dept.toLowerCase().includes(q)
+    );
+    if (foundIdx === -1) { section.style.display="none"; return; }
+
+    // Show only that one step
+    section.style.display = "";
+    const e = top3[foundIdx];
+    const rank = foundIdx + 1;
+    const col = document.createElement("div");
+    col.className = `podium-col rank-${rank}`;
+    col.innerHTML = `
+      <div class="podium-info">
+        <div class="avatar-wrap">
+          <div class="avatar-placeholder">${ini(e.name)}</div>
+          <span class="rank-badge-photo">${rank}</span>
+        </div>
+        <div class="podium-name">${e.name}</div>
+        <div class="podium-title">${e.title} (${e.grade})</div>
+        <div class="podium-score">${starSVG(13)} ${e.effectiveScore}</div>
+      </div>
+      <div class="podium-step"><span class="podium-step-num">${rank}</span></div>`;
+    podium.appendChild(col);
+    return;
+  }
+
+  section.style.display = "";
+  top3.forEach((e,i) => {
+    const rank = i+1;
+    const col = document.createElement("div");
+    col.className = `podium-col rank-${rank}`;
+    col.innerHTML = `
+      <div class="podium-info">
+        <div class="avatar-wrap">
+          <div class="avatar-placeholder">${ini(e.name)}</div>
+          <span class="rank-badge-photo">${rank}</span>
+        </div>
+        <div class="podium-name">${e.name}</div>
+        <div class="podium-title">${e.title} (${e.grade})</div>
+        <div class="podium-score">${starSVG(13)} ${e.effectiveScore}</div>
+      </div>
+      <div class="podium-step"><span class="podium-step-num">${rank}</span></div>`;
+    podium.appendChild(col);
+  });
+}
+
+function renderCards(data) {
+  const list = document.getElementById("cardsList");
+  const noRes = document.getElementById("noResults");
+  list.innerHTML = "";
+  if (!data.length) { noRes.style.display=""; return; }
+  noRes.style.display = "none";
+
+  const selectedCat = document.getElementById("filterCategory").value;
+
+  // Full list without search filter to get correct ranks
+  const fullList = getFilteredBase(false);
+
+  data.forEach((e, idx) => {
+    // Find real rank in full filtered list (without search)
+    const realRank = fullList.findIndex(x => x.id === e.id) + 1;
+    const isExp = expandedId === e.id;
+
+    // Filter activities by selected category
+    const allActs = ACTIVITIES[e.id] || [];
+    const filteredActs = selectedCat === "all" ? allActs : allActs.filter(a => a.category === selectedCat);
+
+    // Recalculate icons based on filtered activities
+    const monitorCount = filteredActs.filter(a => a.category === "Public Speaking").length;
+    const eduCount     = filteredActs.filter(a => a.category === "Education").length;
+    const socialCount  = filteredActs.filter(a => a.category === "University Partners").length;
+    const filteredScore = filteredActs.reduce((s, a) => s + a.points, 0);
+
+    const icons = [];
+    if (eduCount > 0)     icons.push(`<div class="card-icon-item">${eduSVG(22)}<span>${eduCount}</span></div>`);
+    if (monitorCount > 0) icons.push(`<div class="card-icon-item">${monitorSVG(22)}<span>${monitorCount}</span></div>`);
+    if (socialCount > 0)  icons.push(`<div class="card-icon-item">${smileySVG(22)}<span>${socialCount}</span></div>`);
+
+    const acts = filteredActs.map(a=>`
+      <tr class="activity-row">
+        <td class="act-name">${a.name}</td>
+        <td><span class="act-cat-pill">${a.category}</span></td>
+        <td class="act-date">${a.date}</td>
+        <td class="act-points">+${a.points}</td>
+      </tr>`).join("");
+
+    const displayScore = selectedCat === "all" ? e.score : filteredScore;
+
+    const card = document.createElement("div");
+    card.className = "participant-card" + (isExp ? " expanded" : "");
+    card.innerHTML = `
+      <div class="card-main">
+        <div class="card-left">
+          <span class="card-rank">${realRank}</span>
+          <div class="mini-avatar">${ini(e.name)}</div>
+          <div>
+            <div class="participant-name">${e.name}</div>
+            <div class="participant-title">${e.title} (${e.grade})</div>
+          </div>
+        </div>
+        <div class="card-right">
+          <div class="card-icons">${icons.join("")}</div>
+          <div class="card-divider"></div>
+          <div class="card-total">
+            <span class="card-total-label">TOTAL</span>
+            <span class="card-total-score">${starSVG(20)} ${displayScore}</span>
+          </div>
+          <button class="expand-btn" data-id="${e.id}">${chevSVG(isExp)}</button>
+        </div>
+      </div>
+      ${isExp ? `<div class="recent-activity-wrap">
+        <div class="recent-activity-header">RECENT ACTIVITY</div>
+        <table class="activity-table">
+          <thead><tr><th>ACTIVITY</th><th>CATEGORY</th><th>DATE</th><th>POINTS</th></tr></thead>
+          <tbody>${acts||'<tr><td colspan="4" style="text-align:center;color:#64748b;padding:20px">No activity recorded</td></tr>'}</tbody>
+        </table>
+      </div>` : ""}`;
+    list.appendChild(card);
+  });
+
+  list.querySelectorAll(".expand-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = parseInt(btn.dataset.id);
+      expandedId = expandedId === id ? null : id;
+      render();
+    });
+  });
+}
+
+function render() {
+  const data = getFiltered();
+  renderPodium(data);
+  renderCards(data);
+}
+
+["filterYear","filterQuarter","filterCategory"].forEach(id =>
+  document.getElementById(id).addEventListener("change", render)
+);
+
+
+const searchInput = document.getElementById("searchInput");
+const searchClear = document.getElementById("searchClear");
+
+searchInput.addEventListener("input", function() {
+  searchClear.style.display = this.value ? "" : "none";
+  render();
+});
+
+searchClear.addEventListener("click", function() {
+  searchInput.value = "";
+  searchClear.style.display = "none";
+  render();
+});
+
+render();
+</script>
+</body>
+</html>
